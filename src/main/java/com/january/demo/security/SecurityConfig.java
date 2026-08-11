@@ -1,6 +1,7 @@
 package com.january.demo.security;
 
 
+import com.january.demo.constant.SecurityEndpoints;
 import com.january.demo.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,23 +18,24 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.List;
+
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService; // Inject cái service vừa viết ở trên
     private final JwtAuthenticationFilter jwtAuthFilter;
 
-    @Value("${app.api-prefix}")
-    private String apiPrefix;
-
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, apiPrefix + "/v1/auth/logout").authenticated()
-                        .requestMatchers(HttpMethod.PUT, apiPrefix + "/v1/users/change-password").authenticated()
-                        .anyRequest().permitAll()
+                        .requestMatchers(SecurityEndpoints.PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.POST, SecurityEndpoints.USER_POST_ENDPOINTS).hasRole("USER")
+                        .requestMatchers(HttpMethod.PUT, SecurityEndpoints.USER_PUT_ENDPOINTS).hasRole("USER")
+                        .requestMatchers(HttpMethod.GET, SecurityEndpoints.USER_READ_AUTHORITY_GET_ENDPOINTS).hasAuthority("USER_READ")
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

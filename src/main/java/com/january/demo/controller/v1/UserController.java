@@ -16,8 +16,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
@@ -25,6 +27,7 @@ import java.text.ParseException;
 @RestController
 @RequestMapping("${app.api-prefix}/v1/users")
 @RequiredArgsConstructor
+@Slf4j
 public class UserController {
 
     private final IUserService userService;
@@ -65,6 +68,7 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<BaseResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest){
         LoginResponse response = userService.login(loginRequest);
+
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success("Đăng nhập thành công", response));
     }
 
@@ -88,4 +92,6 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success("Đổi mật khẩu thành công"));
     }
+
+
 }
