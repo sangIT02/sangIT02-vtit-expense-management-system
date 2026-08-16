@@ -1,6 +1,7 @@
 package com.january.demo.security;
 
 
+import com.january.demo.constant.AuthConstant;
 import com.january.demo.constant.SecurityEndpoints;
 import com.january.demo.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ import java.util.List;
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final CustomUserDetailsService userDetailsService; // Inject cái service vừa viết ở trên
+    private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthFilter;
 
     @Bean
@@ -32,8 +33,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(SecurityEndpoints.PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.POST, SecurityEndpoints.USER_POST_ENDPOINTS).hasRole("USER")
-                        .requestMatchers(HttpMethod.PUT, SecurityEndpoints.USER_PUT_ENDPOINTS).hasRole("USER")
+                        .requestMatchers(HttpMethod.POST, SecurityEndpoints.USER_POST_ENDPOINTS).hasRole(AuthConstant.ROLE_USER)
+                        .requestMatchers(HttpMethod.PUT, SecurityEndpoints.USER_PUT_ENDPOINTS).hasRole(AuthConstant.ROLE_USER)
                         .requestMatchers(HttpMethod.GET, SecurityEndpoints.USER_READ_AUTHORITY_GET_ENDPOINTS).hasAuthority("USER_READ")
                         .anyRequest().authenticated()
                 )

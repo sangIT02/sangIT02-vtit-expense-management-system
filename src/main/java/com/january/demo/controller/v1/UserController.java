@@ -9,6 +9,7 @@ import com.january.demo.dto.request.RegisterRequest;
 import com.january.demo.dto.response.LoginResponse;
 import com.january.demo.dto.response.RegisterResponse;
 import com.january.demo.repository.UserRepository;
+import com.january.demo.service.IMailService;
 import com.january.demo.service.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -31,7 +32,7 @@ import java.text.ParseException;
 public class UserController {
 
     private final IUserService userService;
-
+    private final IMailService mailService;
     @Operation(
             summary = "Đăng ký tài khoản",
             description = "Tạo tài khoản người dùng mới."
@@ -93,5 +94,9 @@ public class UserController {
                 .body(BaseResponse.success("Đổi mật khẩu thành công"));
     }
 
-
+    @PutMapping("/send")
+    public ResponseEntity<?> sendOtp(){
+        mailService.sendOptEmail("sangnv1214@gmail.com","12345");
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
 }

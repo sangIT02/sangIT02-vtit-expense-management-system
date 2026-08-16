@@ -47,7 +47,7 @@ build/
 
 ### VS Code ###
 .vscode/
-
+docs/finance-module-spec.md
 ### OS ###
 .DS_Store
 Thumbs.db

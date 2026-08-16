@@ -51,10 +51,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         userDetails.getAuthorities()
                 );
 
-                // Gắn thêm thông tin request (IP, Session ID...)
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // 6. CẬP NHẬT CONTEXT -> Báo cho Spring biết "Thằng này uy tín!"
+                // 6. CẬP NHẬT CONTEXT
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
