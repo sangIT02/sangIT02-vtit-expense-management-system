@@ -44,7 +44,7 @@ logs/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
-
+/doc/
 ### VS Code ###
 .vscode/
 docs/finance-module-spec.md

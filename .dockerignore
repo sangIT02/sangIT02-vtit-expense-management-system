@@ -1,0 +1,27 @@
+# 1. Bỏ qua thư mục build nội bộ của máy bạn (RẤT QUAN TRỌNG)
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# 2. Bỏ qua các file cấu hình của IDE (VS Code, IntelliJ, Eclipse)
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# 3. Bỏ qua lịch sử Git
+.git/
+.gitignore
+
+# 4. Bỏ qua chính các file cấu hình Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 5. Bỏ qua log và các file tạm khác
+logs/
+*.log
+*.tmp
+*.class
+doc/
