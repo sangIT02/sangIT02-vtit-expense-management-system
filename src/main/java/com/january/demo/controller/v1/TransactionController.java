@@ -5,11 +5,13 @@ import com.january.demo.dto.request.TransactionCreateRequest;
 import com.january.demo.dto.request.TransactionFilter;
 import com.january.demo.dto.request.TransactionUpdateRequest;
 import com.january.demo.dto.response.TransactionResponse;
+import com.january.demo.entity.TransactionHistory;
 import com.january.demo.enums.TransactionType;
 import com.january.demo.service.ITransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -135,5 +137,14 @@ public class TransactionController {
                     .append('\n');
         }
         return sb.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+
+    @GetMapping("/transaction-histories")
+    public ResponseEntity<BaseResponse<List<TransactionHistory>>> getTransactionHistories(
+            @RequestParam Long id
+    ) {
+        List<TransactionHistory> result = transactionService.getByTransactionId(id);
+        return ResponseEntity.ok().body(BaseResponse.success("Lay chi tiet giao dich", result));
     }
 }

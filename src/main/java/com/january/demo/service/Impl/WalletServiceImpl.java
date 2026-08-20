@@ -31,6 +31,7 @@ public class WalletServiceImpl implements IWalletService {
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
+    private final RsaEncryptionServiceImpl rsaEncryptionServiceImpl;
 
     @Override
     @Transactional
@@ -43,7 +44,7 @@ public class WalletServiceImpl implements IWalletService {
         Wallet wallet = Wallet.builder()
                 .name(request.name())
                 .currency(request.currency() == null ? "VND" : request.currency())
-                .description(request.description())
+                .description(rsaEncryptionServiceImpl.encrypt(request.description(),null))
                 .balance(request.initialBalance() == null ? BigDecimal.ZERO : request.initialBalance())
                 .user(userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Khong tim thay nguoi dung")))
                 .build();
@@ -123,7 +124,7 @@ public class WalletServiceImpl implements IWalletService {
                 wallet.getCurrency(),
                 wallet.getBalance(),
                 wallet.getStatus(),
-                wallet.getDescription(),
+                rsaEncryptionServiceImpl.decrypt(wallet.getDescription(),null),
                 totalIn,
                 totalOut,
                 wallet.getCreatedAt(),

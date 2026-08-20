@@ -1,18 +1,27 @@
 package com.january.demo.service.Impl;
 
+import com.january.demo.dto.request.EncryptedTransactionHistoryRequest;
 import com.january.demo.dto.request.TransactionCreateRequest;
 import com.january.demo.dto.request.TransactionFilter;
 import com.january.demo.dto.request.TransactionUpdateRequest;
 import com.january.demo.dto.response.TransactionResponse;
 import com.january.demo.entity.Category;
 import com.january.demo.entity.Transaction;
+import com.january.demo.entity.TransactionHistory;
 import com.january.demo.entity.Wallet;
 import com.january.demo.enums.TransactionType;
-import com.january.demo.exception.BadRequestException;
+import com.january.demo.exception.DuplicateTransactionException;
+import com.january.demo.exception.InsufficientBalanceException;
+import com.january.demo.exception.InvalidTransactionAmountException;
 import com.january.demo.exception.NotFoundException;
+import com.january.demo.exception.TransactionNotFoundException;
+import com.january.demo.exception.TransactionTypeMismatchException;
 import com.january.demo.repository.CategoryRepository;
+import com.january.demo.repository.TransactionHistoryRepository;
 import com.january.demo.repository.TransactionRepository;
 import com.january.demo.repository.WalletRepository;
+import com.january.demo.service.IAsymmetricCryptoService;
+import com.january.demo.service.ISymmetricCryptoService;
 import com.january.demo.service.ITransactionService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +45,9 @@ public class TransactionServiceImpl implements ITransactionService {
     private final TransactionRepository transactionRepository;
     private final WalletRepository walletRepository;
     private final CategoryRepository categoryRepository;
+    private final TransactionHistoryServiceImpl transactionHistoryService;
+    private final IAsymmetricCryptoService asymmetricCryptoService;
+    private final ISymmetricCryptoService symmetricCryptoService;
 
     @Override
     @Transactional
@@ -48,7 +60,10 @@ public class TransactionServiceImpl implements ITransactionService {
                 .orElseThrow(() -> new NotFoundException("Khong tim thay danh muc"));
 
         validateCategoryType(request.type(), category.getType());
+        validateAmount(request.amount());
         checkBalance(wallet, request.type(), request.amount());
+        checkDuplicate(wallet, category, request.type(), request.amount(), request.transactionDate(),
+                request.description(), null);
 
         Transaction transaction = Transaction.builder()
                 .type(request.type())
@@ -95,7 +110,10 @@ public class TransactionServiceImpl implements ITransactionService {
                 .orElseThrow(() -> new NotFoundException("Khong tim thay danh muc"));
 
         validateCategoryType(request.type(), newCategory.getType());
+        validateAmount(request.amount());
         checkBalance(newWallet, request.type(), request.amount());
+        checkDuplicate(newWallet, newCategory, request.type(), request.amount(), request.transactionDate(),
+                request.description(), id);
 
         transaction.setType(request.type());
         transaction.setWallet(newWallet);
@@ -132,22 +150,81 @@ public class TransactionServiceImpl implements ITransactionService {
                 .toList();
     }
 
+    @Override
+    public List<TransactionHistory> getByTransactionId(Long transactionId) {
+        List<TransactionHistory> historyList = new ArrayList<>();
+        if (transactionId == null) {
+            return null;
+        }
+        List<EncryptedTransactionHistoryRequest> encryptedTransactionHistoryRequests = transactionHistoryService.findByTransactionId(transactionId);
+        if (encryptedTransactionHistoryRequests == null || encryptedTransactionHistoryRequests.isEmpty()) {
+            return List.of();
+        }
+        for (EncryptedTransactionHistoryRequest encrypted : encryptedTransactionHistoryRequests) {
+            TransactionHistory th = TransactionHistory.builder()
+                    .transactionId(asymmetricCryptoService.decrypt(encrypted.transactionId(),null))
+                    .have(new BigDecimal(
+                            asymmetricCryptoService.decrypt(
+                                    encrypted.have(),
+                                    null
+                            )
+                    ))
+                    .inDebt(new BigDecimal(
+                            asymmetricCryptoService.decrypt(
+                                    encrypted.inDebt(),
+                                    null
+                            )
+                    ))
+                    .account(asymmetricCryptoService.decrypt(encrypted.account(),null))
+                    .time(LocalDateTime.parse(
+                            asymmetricCryptoService.decrypt(
+                                    encrypted.time(),
+                                    null
+                            )
+                    ))
+                    .build();
+            historyList.add(th);
+        }
+        return historyList;
+    }
+
     private Transaction findOwned(Long id) {
         return transactionRepository.findByIdAndWallet_User_Id(id, getCurrentUserId())
-                .orElseThrow(() -> new NotFoundException("Khong tim thay giao dich"));
+                .orElseThrow(() -> new TransactionNotFoundException("Khong tim thay giao dich"));
     }
 
     private void validateCategoryType(TransactionType txType, com.january.demo.enums.CategoryType catType) {
         boolean matches = (txType == TransactionType.INCOME && catType == com.january.demo.enums.CategoryType.INCOME)
                 || (txType == TransactionType.EXPENSE && catType == com.january.demo.enums.CategoryType.EXPENSE);
         if (!matches) {
-            throw new BadRequestException("Danh muc khong phu hop voi loai giao dich");
+            throw new TransactionTypeMismatchException("Danh muc khong phu hop voi loai giao dich");
+        }
+    }
+
+    private void validateAmount(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidTransactionAmountException("So tien giao dich phai lon hon 0");
         }
     }
 
     private void checkBalance(Wallet wallet, TransactionType type, BigDecimal amount) {
         if (type == TransactionType.EXPENSE && wallet.getBalance().compareTo(amount) < 0) {
-            throw new BadRequestException("So du khong du de thuc hien giao dich");
+            throw new InsufficientBalanceException("So du khong du de thuc hien giao dich");
+        }
+    }
+
+    private void checkDuplicate(Wallet wallet, Category category, TransactionType type, BigDecimal amount,
+                                LocalDateTime transactionDate, String description, Long excludeId) {
+        boolean duplicate = transactionRepository.findAll().stream()
+                .filter(t -> excludeId == null || !t.getId().equals(excludeId))
+                .anyMatch(t -> t.getWallet().getId().equals(wallet.getId())
+                        && t.getCategory().getId().equals(category.getId())
+                        && t.getType() == type
+                        && t.getAmount().compareTo(amount) == 0
+                        && t.getTransactionDate().equals(transactionDate)
+                        && t.getDescription().equals(description));
+        if (duplicate) {
+            throw new DuplicateTransactionException("Giao dich trung lap: da ton tai giao dich giong het truoc do");
         }
     }
 

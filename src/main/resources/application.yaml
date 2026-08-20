@@ -60,6 +60,11 @@ springdoc:
 
 app:
   api-prefix: /api
+  security:
+    aes-key: ${AES_SECRET_KEY}
+    rsa:
+      public-key: ${RSA_PUBLIC_KEY}
+      private-key: ${RSA_PRIVATE_KEY}
 
 jwt:
   secret-key: ${JWT_SECRET}

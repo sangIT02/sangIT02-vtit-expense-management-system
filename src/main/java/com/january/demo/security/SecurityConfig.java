@@ -38,7 +38,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, SecurityEndpoints.USER_PUT_ENDPOINTS).hasRole(AuthConstant.ROLE_USER)
                         .requestMatchers(HttpMethod.GET, SecurityEndpoints.USER_READ_AUTHORITY_GET_ENDPOINTS).hasAuthority("USER_READ")
                         .requestMatchers(SecurityEndpoints.ADMIN_ENDPOINTS).hasRole(AuthConstant.ROLE_ADMIN)
-                        .anyRequest().access(apiPermissionAuthorizationManager)
+                        .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

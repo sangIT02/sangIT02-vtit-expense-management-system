@@ -52,8 +52,7 @@ public class Wallet extends BaseEntity {
     @Builder.Default
     private String currency = "VND";
 
-    @Column(name = "description", length = 255)
-    @Size(max = 255, message = "Mo ta khong duoc vuot qua 255 ky tu")
+    @Column(name = "description",columnDefinition = "TEXT")
     private String description;
 
     @Enumerated(EnumType.STRING)

@@ -329,6 +329,38 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Xu ly loi ma hoa du lieu.
+     *
+     * @param exception ngoai le ma hoa du lieu
+     * @return response loi 500 voi thong bao tu exception
+     */
+    @ExceptionHandler(EncryptionException.class)
+    public ResponseEntity<BaseResponse<Object>> handleEncryptionException(
+            EncryptionException exception,
+            HttpServletRequest request
+    ) {
+        log.error("{} {} -> {} {}", request.getMethod(), request.getRequestURI(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(), exception.getMessage(), exception);
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
+    }
+
+    /**
+     * Xu ly loi giai ma du lieu.
+     *
+     * @param exception ngoai le giai ma du lieu
+     * @return response loi 500 voi thong bao tu exception
+     */
+    @ExceptionHandler(DecryptionException.class)
+    public ResponseEntity<BaseResponse<Object>> handleDecryptionException(
+            DecryptionException exception,
+            HttpServletRequest request
+    ) {
+        log.error("{} {} -> {} {}", request.getMethod(), request.getRequestURI(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(), exception.getMessage(), exception);
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
+    }
+
+    /**
      * Xu ly loi client gui qua nhieu request trong thoi gian ngan.
      *
      * @param exception ngoai le vuot gioi han request
@@ -343,6 +375,81 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage());
     }
 
+    /**
+     * Xu ly loi khong tim thay giao dich.
+     *
+     * @param exception ngoai le khi giao dich khong ton tai hoac khong thuoc ve user
+     * @return response loi 404 voi thong bao tu exception
+     */
+    @ExceptionHandler(TransactionNotFoundException.class)
+    public ResponseEntity<BaseResponse<Object>> handleTransactionNotFoundException(
+            TransactionNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        logTransactionError(HttpStatus.NOT_FOUND, exception, request);
+        return buildErrorResponse(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    /**
+     * Xu ly loi so du vi khong du cho giao dich chi tieu.
+     *
+     * @param exception ngoai le khi so du nho hon so tien can chi
+     * @return response loi 400 voi thong bao tu exception
+     */
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<BaseResponse<Object>> handleInsufficientBalanceException(
+            InsufficientBalanceException exception,
+            HttpServletRequest request
+    ) {
+        logTransactionError(HttpStatus.BAD_REQUEST, exception, request);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    /**
+     * Xu ly loi loai giao dich khong khop voi loai danh muc.
+     *
+     * @param exception ngoai le khi INCOME/EXPENSE khong khop voi loai category
+     * @return response loi 400 voi thong bao tu exception
+     */
+    @ExceptionHandler(TransactionTypeMismatchException.class)
+    public ResponseEntity<BaseResponse<Object>> handleTransactionTypeMismatchException(
+            TransactionTypeMismatchException exception,
+            HttpServletRequest request
+    ) {
+        logTransactionError(HttpStatus.BAD_REQUEST, exception, request);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    /**
+     * Xu ly loi so tien giao dich khong hop le.
+     *
+     * @param exception ngoai le khi so tien nho hon hoac bang 0
+     * @return response loi 400 voi thong bao tu exception
+     */
+    @ExceptionHandler(InvalidTransactionAmountException.class)
+    public ResponseEntity<BaseResponse<Object>> handleInvalidTransactionAmountException(
+            InvalidTransactionAmountException exception,
+            HttpServletRequest request
+    ) {
+        logTransactionError(HttpStatus.BAD_REQUEST, exception, request);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    /**
+     * Xu ly loi giao dich trung lap.
+     *
+     * @param exception ngoai le khi phat hien giao dich trung lap
+     * @return response loi 409 voi thong bao tu exception
+     */
+    @ExceptionHandler(DuplicateTransactionException.class)
+    public ResponseEntity<BaseResponse<Object>> handleDuplicateTransactionException(
+            DuplicateTransactionException exception,
+            HttpServletRequest request
+    ) {
+        logTransactionError(HttpStatus.CONFLICT, exception, request);
+        return buildErrorResponse(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<BaseResponse<Object>> handleException(
             Exception exception,
@@ -355,6 +462,11 @@ public class GlobalExceptionHandler {
 
     private void logClientError(HttpStatus status, String message, HttpServletRequest request) {
         log.warn("{} {} -> {} {}", request.getMethod(), request.getRequestURI(), status.value(), message);
+    }
+
+    private void logTransactionError(HttpStatus status, RuntimeException exception, HttpServletRequest request) {
+        log.error("{} {} -> {} {}", request.getMethod(), request.getRequestURI(),
+                status.value(), exception.getMessage(), exception);
     }
 
     private ResponseEntity<BaseResponse<Object>> buildErrorResponse(HttpStatus status, String message) {
